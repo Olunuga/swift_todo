@@ -15,17 +15,19 @@ class TodoListViewController: UITableViewController {
     
     var todoItemArray: [Item] = [Item]()
     let defaults = UserDefaults.standard
-
-
+    
+    //let directoryfilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first.appendPathComponent("Items.plist")
+    var  directoryfilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    var fileDir : URL?
+    
+    
+   
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
-        
-        let item = Item(title: "Find mark")
-        todoItemArray.append(item)
-//      if let items = UserDefaults.standard.array(forKey: "TodoItemArray") as? [Item]{
-//            todoItemArray = items
-//        }
+        fileDir = directoryfilePath.appendingPathComponent("Items.plist")
+        loadItems()
     }
 
     override func didReceiveMemoryWarning() {
@@ -68,7 +70,7 @@ class TodoListViewController: UITableViewController {
             
             let item : Item  = Item(title: mTexField.text!)
             self.todoItemArray.append(item)
-           // self.defaults.set(self.todoItemArray, forKey: "TodoItemArray")
+            self.saveItem()
             self.tableView.reloadData()
         }
         alert.addAction(action)
@@ -81,6 +83,32 @@ class TodoListViewController: UITableViewController {
             
         }
     }
+    
+    func saveItem(){
+        let encoder = PropertyListEncoder()
+        do{
+            let data = try encoder.encode(todoItemArray)
+            try data.write(to:fileDir!)
+        }catch{
+            print("Error writing data", "\(error)")
+        }
+        self.tableView.reloadData()
+    }
+    
+    func loadItems(){
+        if let data = try? Data(contentsOf: fileDir!){
+            let decoder = PropertyListDecoder()
+            do{
+                todoItemArray = try decoder.decode([Item].self, from: data)
+                
+            }catch{
+                print(error)
+            }
+            
+        }
+    }
+    
+   
     
 
 }
