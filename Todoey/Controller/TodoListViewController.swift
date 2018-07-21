@@ -13,7 +13,7 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     
-    var todoItemArray = ["Find Mark", "Read book", "Go home", "Make money"]
+    var todoItemArray: [Item] = [Item]()
     let defaults = UserDefaults.standard
 
 
@@ -21,9 +21,11 @@ class TodoListViewController: UITableViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-      if let items = UserDefaults.standard.array(forKey: "TodoItemArray") as? [String]{
-            todoItemArray = items
-        }
+        let item = Item(title: "Find mark")
+        todoItemArray.append(item)
+//      if let items = UserDefaults.standard.array(forKey: "TodoItemArray") as? [Item]{
+//            todoItemArray = items
+//        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -36,7 +38,9 @@ class TodoListViewController: UITableViewController {
     //MARK- tableView setup section
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "todoListCell", for: indexPath)
-        cell.textLabel?.text = todoItemArray[indexPath.row]
+        cell.textLabel?.text = todoItemArray[indexPath.row].title
+        let item : Item = todoItemArray[indexPath.row]
+        cell.accessoryType = item.isDone ? .checkmark : .none
         return cell
     }
     
@@ -50,13 +54,9 @@ class TodoListViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         //print(todoItemArray[indexPath.row])
-        if  tableView.cellForRow(at: indexPath)?.accessoryType == .checkmark{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .none
-        }else{
-            tableView.cellForRow(at: indexPath)?.accessoryType = .checkmark
-        }
-        
-        tableView.deselectRow(at: indexPath, animated: true)
+         tableView.deselectRow(at: indexPath, animated: true)
+        todoItemArray[indexPath.row].isDone = !todoItemArray[indexPath.row].isDone
+        tableView.reloadData()
     }
     
     //MARK - add new item section
@@ -65,8 +65,10 @@ class TodoListViewController: UITableViewController {
         var mTexField = UITextField()
         let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
-            self.todoItemArray.append(mTexField.text!)
-            self.defaults.set(self.todoItemArray, forKey: "TodoItemArray")
+            
+            let item : Item  = Item(title: mTexField.text!)
+            self.todoItemArray.append(item)
+           // self.defaults.set(self.todoItemArray, forKey: "TodoItemArray")
             self.tableView.reloadData()
         }
         alert.addAction(action)
