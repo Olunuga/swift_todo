@@ -13,7 +13,7 @@ import UIKit
 
 class TodoListViewController: UITableViewController {
     
-     let todoItemArray = ["Find Mark", "Read book", "Go home", "Make money"]
+    var todoItemArray = ["Find Mark", "Read book", "Go home", "Make money"]
 
 
     override func viewDidLoad() {
@@ -29,6 +29,8 @@ class TodoListViewController: UITableViewController {
     }
     
     
+    
+    //MARK- tableView setup section
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "todoListCell", for: indexPath)
         cell.textLabel?.text = todoItemArray[indexPath.row]
@@ -53,6 +55,27 @@ class TodoListViewController: UITableViewController {
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
+    
+    //MARK - add new item section
+    
+    @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
+        var mTexField = UITextField()
+        let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            self.todoItemArray.append(mTexField.text!)
+            self.tableView.reloadData()
+        }
+        alert.addAction(action)
+        alert.addTextField { (textField) in
+             textField.placeholder = "Create new item"
+             mTexField = textField
+        }
+        present(alert, animated: true) {
+            
+            
+        }
+    }
+    
 
 }
 
