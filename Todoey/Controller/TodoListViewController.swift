@@ -7,17 +7,14 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 
 
 class TodoListViewController: UITableViewController {
     
-    var todoItemArray: [Item] = [Item]()
-    let defaults = UserDefaults.standard
-    var  directoryfilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-    var fileDir : URL?
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    var todoItemArray: Results<Item>?
+    let realm = try! Realm()
     
     var selectedCategory : Category?{
         didSet{
@@ -45,14 +42,19 @@ class TodoListViewController: UITableViewController {
     //MARK: tableView setup section
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "todoListCell", for: indexPath)
-        cell.textLabel?.text = todoItemArray[indexPath.row].title
-        let item : Item = todoItemArray[indexPath.row]
-        cell.accessoryType = item.done ? .checkmark : .none
+        if let item : Item = todoItemArray?[indexPath.row]{
+            
+            cell.textLabel?.text = item.title
+            cell.accessoryType = item.done ? .checkmark : .none
+            
+        }else{
+            cell.textLabel?.text = "Item not available"
+        }
         return cell
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return todoItemArray.count
+        return todoItemArray?.count ?? 1
     }
     
     override func numberOfSections(in tableView: UITableView) -> Int {
@@ -60,10 +62,16 @@ class TodoListViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //print(todoItemArray[indexPath.row])
+        if let todoItem = todoItemArray?[indexPath.row] {
+            do{
+           try realm.write {
+                todoItem.done = !todoItem.done
+                }}catch{
+                    print("Error updating item \(error)")
+            }
+        }
          tableView.deselectRow(at: indexPath, animated: true)
-        todoItemArray[indexPath.row].done = !todoItemArray[indexPath.row].done
-        tableView.reloadData()
+         tableView.reloadData()
     }
     
     //MARK: add new item section
@@ -72,14 +80,20 @@ class TodoListViewController: UITableViewController {
         var mTexField = UITextField()
         let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+
+            if let currentCategory = self.selectedCategory{
+                do{
+                try self.realm.write {
+                    let item : Item  = Item()
+                    item.title = mTexField.text!
+                    currentCategory.items.append(item)
+                    }
+                    
+                }catch{
+                    print("Error \(error)")
+                }
+            }
             
-            let item : Item  = Item(context: self.context)
-            item.title = mTexField.text!
-            item.done = false
-            item.parentCategory = self.selectedCategory
-            
-            self.todoItemArray.append(item)
-            self.saveItem()
             self.tableView.reloadData()
         }
         alert.addAction(action)
@@ -88,55 +102,34 @@ class TodoListViewController: UITableViewController {
              mTexField = textField
         }
         present(alert, animated: true) {
-            
-            
+
+
         }
     }
     
-    func saveItem(){
-        do{
-           try context.save()
-        }catch{
-           print("error saving data with\(error)")
-        }
-        self.tableView.reloadData()
-    }
-    
-    func loadItems(with request:NSFetchRequest<Item> = Item.fetchRequest(), and predicate : NSPredicate? = nil){
-        
-        let categoryPredicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
-        
-        if let searchPredicate : NSPredicate  = predicate{
-            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [categoryPredicate,searchPredicate])
-        }else{
-            request.predicate = categoryPredicate
-        }
-        do{
-            todoItemArray = try context.fetch(request)
+    func loadItems(){
+            todoItemArray = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
             tableView.reloadData()
-        }catch{
-            print("Could not fetch from due to error\(error)")
-        }
     }
 }
 
-extension TodoListViewController: UISearchBarDelegate{
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        let request : NSFetchRequest<Item> = Item.fetchRequest()
-        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
-        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-        loadItems(with: request, and: predicate)
-    }
-    
-    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        if searchBar.text?.count == 0 {
-            loadItems()
-            
-            DispatchQueue.main.async {
-                searchBar.resignFirstResponder()
-            }
-        }
-    }
-    
-}
+//extension TodoListViewController: UISearchBarDelegate{
+//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+//        let request : NSFetchRequest<Item> = Item.fetchRequest()
+//        let predicate = NSPredicate(format: "title CONTAINS[cd] %@", searchBar.text!)
+//        request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+//        loadItems(with: request, and: predicate)
+//    }
+//
+//    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+//        if searchBar.text?.count == 0 {
+//            loadItems()
+//
+//            DispatchQueue.main.async {
+//                searchBar.resignFirstResponder()
+//            }
+//        }
+//    }
+//
+//}
 
