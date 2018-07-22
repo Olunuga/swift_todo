@@ -11,8 +11,8 @@ import RealmSwift
 
 class CategoryViewController: UITableViewController {
     
-    let realm = try! Realm()
-    var categoryItemArray : Results<Category>?
+    lazy var realm = try! Realm()
+    var categoryItems : Results<Category>?
     
     var selectedRow :Int?
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
@@ -24,12 +24,12 @@ class CategoryViewController: UITableViewController {
     
     //MARK: tableView delegate methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryItemArray?.count ?? 1
+        return categoryItems?.count ?? 1
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "categoryItemCell", for: indexPath)
-        cell.textLabel?.text = categoryItemArray?[indexPath.row].name ?? "Category not available"
+        cell.textLabel?.text = categoryItems?[indexPath.row].name ?? "Category not available"
         return cell
     }
     
@@ -42,7 +42,7 @@ class CategoryViewController: UITableViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "goToCategoryItem"{
             let itemCatVC = segue.destination as! TodoListViewController
-            itemCatVC.selectedCategory = categoryItemArray?[selectedRow!]
+            itemCatVC.selectedCategory = categoryItems?[selectedRow!]
         }
     }
     
@@ -51,7 +51,7 @@ class CategoryViewController: UITableViewController {
     
     //MARK: data source methods
     func loadData(){
-         categoryItemArray = realm.objects(Category.self)
+         categoryItems = realm.objects(Category.self)
          tableView.reloadData()
     }
     
