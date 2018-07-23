@@ -10,7 +10,7 @@ import UIKit
 import RealmSwift
 import SwipeCellKit
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController {
     
     lazy var realm = try! Realm()
     var categoryItems : Results<Category>?
@@ -20,7 +20,6 @@ class CategoryViewController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.rowHeight = 80.0
         loadData()
     }
     
@@ -31,9 +30,8 @@ class CategoryViewController: UITableViewController {
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryItemCell") as! SwipeTableViewCell
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         cell.textLabel?.text = categoryItems?[indexPath.row].name ?? "Category not available"
-        cell.delegate = self
         return cell
     }
     
@@ -70,6 +68,20 @@ class CategoryViewController: UITableViewController {
         }
     }
     
+    //MARk: delete methods
+    override func deletItem(at indexPath: IndexPath) {
+        if let categoryToDelete = self.categoryItems?[indexPath.row]{
+            do{
+                try self.realm.write {
+                    self.realm.delete(categoryToDelete)
+                }
+                
+            }catch{
+                print("could not delete data")
+            }
+        }
+    }
+    
     
     //MARK:- add button pressed method
  
@@ -90,19 +102,3 @@ class CategoryViewController: UITableViewController {
     
 }
 
-extension CategoryViewController : SwipeTableViewCellDelegate{
-    func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
-        guard orientation == .right else { return nil }
-        
-        let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
-            // handle action by updating model with deletion
-            print("Item deleted")
-        }
-        
-        // customize the action appearance
-        deleteAction.image = UIImage(named: "delete-icon")
-        
-        return [deleteAction]
-    }
-    
-}

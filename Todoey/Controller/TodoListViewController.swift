@@ -10,8 +10,7 @@ import UIKit
 import RealmSwift
 
 
-
-class TodoListViewController: UITableViewController {
+class TodoListViewController: SwipeTableViewController {
     
     var todoItems: Results<Item>?
     lazy var realm = try! Realm()
@@ -25,11 +24,6 @@ class TodoListViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        //fileDir = directoryfilePath.appendingPathComponent("Items.plist")
-        //loadItems()
-        
-       // print(categoryUniqueID)
     }
 
     override func didReceiveMemoryWarning() {
@@ -41,7 +35,7 @@ class TodoListViewController: UITableViewController {
     
     //MARK: tableView setup section
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "todoListCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
         
         if let item : Item = todoItems?[indexPath.row]{
             cell.textLabel?.text = item.title
@@ -111,6 +105,23 @@ class TodoListViewController: UITableViewController {
     func loadItems(){
             todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
             tableView.reloadData()
+    }
+    
+    
+    override func deletItem(at indexPath: IndexPath) {
+        
+        if let itemTodDelete = todoItems?[indexPath.row]{
+            do{
+                try realm.write {
+                    realm.delete(itemTodDelete)
+                }
+                
+            }catch{
+                print("Could not delete item")
+            }
+        }
+        
+        
     }
 }
 
