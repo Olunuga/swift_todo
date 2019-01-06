@@ -8,12 +8,13 @@
 
 import UIKit
 import RealmSwift
-
+import ChameleonFramework
 
 class TodoListViewController: SwipeTableViewController {
     
     var todoItems: Results<Item>?
     lazy var realm = try! Realm()
+    @IBOutlet weak var searchBar: UISearchBar!
     
     var selectedCategory : Category?{
         didSet{
@@ -24,6 +25,40 @@ class TodoListViewController: SwipeTableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+         title = selectedCategory!.name
+        guard let color = selectedCategory?.color else {
+            do {fatalError("failed")}
+        }
+         updateNavBarColor(withHexColor: color)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+       let originalColor =  "1D9bF6"
+       updateNavBarColor(withHexColor: originalColor)
+    }
+    
+    
+    func updateNavBarColor(withHexColor colorHexCode: String) {
+        
+        guard let color = UIColor(hexString: colorHexCode) else {
+            do {fatalError("failed")}
+        }
+        if let navBar = navigationController?.navigationBar{
+            navBar.barTintColor = color
+            searchBar.barTintColor = color
+            navBar.tintColor = UIColor.init(contrastingBlackOrWhiteColorOn: color, isFlat: true)
+            
+            if #available(iOS 11.0, *) {
+                navBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor: UIColor.init(contrastingBlackOrWhiteColorOn: color, isFlat: true)]
+            } else {
+                // Fallback on earlier versions
+            }
+           
+            
+        }
     }
 
     override func didReceiveMemoryWarning() {
@@ -40,6 +75,10 @@ class TodoListViewController: SwipeTableViewController {
         if let item : Item = todoItems?[indexPath.row]{
             cell.textLabel?.text = item.title
             cell.accessoryType = item.done ? .checkmark : .none
+            if let color = UIColor(hexString: selectedCategory?.color).darken(byPercentage: (CGFloat(indexPath.row))/(CGFloat(todoItems!.count))) {
+                cell.backgroundColor = color
+                cell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: color, isFlat: true)
+            }
             
         }else{
             cell.textLabel?.text = "No items added"

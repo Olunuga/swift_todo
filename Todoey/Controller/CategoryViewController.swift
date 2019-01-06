@@ -8,7 +8,6 @@
 
 import UIKit
 import RealmSwift
-import SwipeCellKit
 import ChameleonFramework
 
 
@@ -35,7 +34,12 @@ class CategoryViewController: SwipeTableViewController {
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         let item = categoryItems?[indexPath.row]
         cell.textLabel?.text = item?.name ?? "Category not available"
-        cell.backgroundColor = UIColor(hexString: item?.color)
+        
+        guard let color = UIColor(hexString: item?.color) else {fatalError()}
+        cell.backgroundColor = color
+        cell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: color, isFlat: true)
+        
+        
         return cell
     }
     
