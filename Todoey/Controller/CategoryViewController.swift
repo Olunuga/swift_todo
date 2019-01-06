@@ -7,28 +7,39 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+
+class CategoryViewController: SwipeTableViewController {
     
-    var categoryItemArray : [Category] = [Category]()
+    lazy var realm = try! Realm()
+    var categoryItems : Results<Category>?
+    
     var selectedRow :Int?
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         loadData()
     }
     
     //MARK: tableView delegate methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryItemArray.count
+        return categoryItems?.count ?? 1
     }
+
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "categoryItemCell", for: indexPath)
-        cell.textLabel?.text = categoryItemArray[indexPath.row].name
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        let item = categoryItems?[indexPath.row]
+        cell.textLabel?.text = item?.name ?? "Category not available"
+        
+        guard let color = UIColor(hexString: item?.color) else {fatalError()}
+        cell.backgroundColor = color
+        cell.textLabel?.textColor = UIColor.init(contrastingBlackOrWhiteColorOn: color, isFlat: true)
+        
+        
         return cell
     }
     
@@ -41,7 +52,7 @@ class CategoryViewController: UITableViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "goToCategoryItem"{
             let itemCatVC = segue.destination as! TodoListViewController
-            itemCatVC.selectedCategory = categoryItemArray[selectedRow!]
+            itemCatVC.selectedCategory = categoryItems?[selectedRow!]
         }
     }
     
@@ -50,21 +61,32 @@ class CategoryViewController: UITableViewController {
     
     //MARK: data source methods
     func loadData(){
-        let request : NSFetchRequest<Category> = Category.fetchRequest()
-        do{
-           categoryItemArray =  try context.fetch(request)
-           tableView.reloadData()
-        } catch{
-            print("could not load data due to \(error)")
-        }
+         categoryItems = realm.objects(Category.self)
+         tableView.reloadData()
     }
     
-    func saveData(){
+    func saveData(category : Category){
         do{
-            try context.save()
+            try realm.write {
+                realm.add(category)
+            }
             tableView.reloadData()
         }catch{
             print("could not save data \(error)")
+        }
+    }
+    
+    //MARk: delete methods
+    override func deletItem(at indexPath: IndexPath) {
+        if let categoryToDelete = self.categoryItems?[indexPath.row]{
+            do{
+                try self.realm.write {
+                    self.realm.delete(categoryToDelete)
+                }
+                
+            }catch{
+                print("could not delete data")
+            }
         }
     }
     
@@ -75,11 +97,10 @@ class CategoryViewController: UITableViewController {
         var mTextField = UITextField()
         let alert = UIAlertController(title: "New Todo Category", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Category", style: .default) { (action) in
-            let category = Category(context: self.context)
+            let category = Category()
             category.name = mTextField.text!
-            self.categoryItemArray.append(category)
-            self.saveData()
-            print(mTextField.text!)
+            category.color = UIColor.randomFlat().hexValue()
+            self.saveData(category: category)
         }
         alert.addTextField { (textField) in
             mTextField = textField
@@ -89,3 +110,4 @@ class CategoryViewController: UITableViewController {
     }
     
 }
+
